@@ -1,69 +1,202 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DreamChat Admin Panel</title>
   <style>
-    body { background: #0f172a; color: #e2e8f0; font-family: monospace; padding: 20px; }
-    h1, h2 { color: #a855f7; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #334155; padding: 8px; text-align: left; }
-    th { background: #1e293b; }
-    button { background: #ff3b30; color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
-    button:hover { background: #cc0000; }
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+    h1, h2, h3 { color: #a855f7; }
+    input, button {
+      padding: 12px 16px;
+      margin: 8px 0;
+      border-radius: 60px;
+      border: none;
+      font-size: 1rem;
+    }
+    button {
+      background: #a855f7;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover { transform: scale(0.97); opacity: 0.85; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #1e293b;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 12px;
+      text-align: left;
+    }
+    th { background: #2d3748; }
+    .delete-btn { background: #ff3b30; }
+    .delete-btn:hover { background: #cc0000; }
+    .admin-card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .flex-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
-  <h1>DreamChat Admin Panel</h1>
-  <div id="auth">
-    <h2>Admin Login</h2>
-    <input type="text" id="adminUsername" placeholder="Username"><br><br>
-    <input type="password" id="adminPassword" placeholder="Password"><br><br>
-    <button id="adminLoginBtn">Login</button>
+<h1>DreamChat Admin Panel</h1>
+<div id="auth" class="admin-card">
+  <h2>Admin Login</h2>
+  <input type="text" id="adminUsername" placeholder="Username" value="ReBroDream"><br>
+  <input type="password" id="adminPassword" placeholder="Password" value="9165297102"><br>
+  <button id="adminLoginBtn">Login</button>
+</div>
+<div id="adminContent" style="display: none;">
+  <div class="admin-card">
+    <h3>Выдача Dreams</h3>
+    <div class="flex-row">
+      <input id="giveDreamsUser" placeholder="Никнейм">
+      <input id="giveDreamsAmount" placeholder="Количество">
+      <button id="giveDreamsBtn">Выдать Dreams</button>
+    </div>
   </div>
-  <div id="adminContent" style="display: none;">
-    <h2>Users</h2>
-    <div id="usersList"></div>
-    <h2>Messages (last 100)</h2>
-    <div id="messagesList"></div>
+  <div class="admin-card">
+    <h3>Выдача / снятие галочки</h3>
+    <div class="flex-row">
+      <input id="giveVerifyUser" placeholder="Никнейм">
+      <button id="giveVerifyBtn">Выдать галочку</button>
+      <button id="removeVerifyBtn">Снять галочку</button>
+    </div>
   </div>
-  <script>
-    let token = null;
-    document.getElementById('adminLoginBtn').onclick = async () => {
-      const username = document.getElementById('adminUsername').value;
-      const password = document.getElementById('adminPassword').value;
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      if (data.token && data.role === 'admin') {
-        token = data.token;
-        document.getElementById('auth').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
+  <div class="admin-card">
+    <h3>Создать официальный канал</h3>
+    <div class="flex-row">
+      <input id="newChannelName" placeholder="Название канала">
+      <button id="createChannelBtn">Создать</button>
+    </div>
+  </div>
+  <h2>Пользователи</h2>
+  <div id="usersList"></div>
+  <h2>Сообщения (последние 100)</h2>
+  <div id="messagesList"></div>
+</div>
+
+<script>
+  let token = null;
+  const adminLogin = document.getElementById('adminLoginBtn');
+  const authDiv = document.getElementById('auth');
+  const contentDiv = document.getElementById('adminContent');
+
+  adminLogin.onclick = async () => {
+    const username = document.getElementById('adminUsername').value;
+    const password = document.getElementById('adminPassword').value;
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (data.token && data.role === 'admin') {
+      token = data.token;
+      authDiv.style.display = 'none';
+      contentDiv.style.display = 'block';
+      loadUsers();
+      loadMessages();
+    } else alert('Ошибка входа: неверные данные или недостаточно прав');
+  };
+
+  async function apiAdmin(method, url, body) {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    return res.json();
+  }
+
+  document.getElementById('giveDreamsBtn').onclick = async () => {
+    const username = document.getElementById('giveDreamsUser').value;
+    const amount = parseInt(document.getElementById('giveDreamsAmount').value);
+    if(!username || isNaN(amount)) return alert('Заполните поля');
+    await apiAdmin('POST', '/api/admin/add-dreams', { username, amount });
+    alert('Dreams выданы');
+    loadUsers();
+  };
+  document.getElementById('giveVerifyBtn').onclick = async () => {
+    const username = document.getElementById('giveVerifyUser').value;
+    if(!username) return;
+    await apiAdmin('POST', '/api/admin/set-verified', { username, verified: true });
+    alert('Галочка выдана');
+    loadUsers();
+  };
+  document.getElementById('removeVerifyBtn').onclick = async () => {
+    const username = document.getElementById('giveVerifyUser').value;
+    if(!username) return;
+    await apiAdmin('POST', '/api/admin/set-verified', { username, verified: false });
+    alert('Галочка снята');
+    loadUsers();
+  };
+  document.getElementById('createChannelBtn').onclick = async () => {
+    const name = document.getElementById('newChannelName').value;
+    if(!name) return;
+    await apiAdmin('POST', '/api/channels', { name, isOfficial: true });
+    alert('Канал создан');
+  };
+
+  async function loadUsers() {
+    const users = await apiAdmin('GET', '/api/admin/users');
+    const container = document.getElementById('usersList');
+    container.innerHTML = `<table>
+      <tr><th>ID</th><th>Никнейм</th><th>Dreams</th><th>Роль</th><th>Галочка</th><th>Действие</th></tr>
+      ${users.map(u => `
+        <tr>
+          <td>${u.id}</td>
+          <td>${u.username} ${u.verified ? '✅' : ''}</td>
+          <td>${u.dreams}</td>
+          <td>${u.role}</td>
+          <td>${u.verified ? 'Да' : 'Нет'}</td>
+          <td><button class="delete-btn" data-id="${u.id}">Удалить</button></td>
+        </tr>
+      `).join('')}
+    </table>`;
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.onclick = async () => {
+        await apiAdmin('DELETE', `/api/admin/user/${btn.dataset.id}`);
         loadUsers();
-        loadMessages();
-      } else alert('Login failed or not admin');
-    };
-    async function loadUsers() {
-      const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
-      const users = await res.json();
-      const container = document.getElementById('usersList');
-      container.innerHTML = `<table><tr><th>ID</th><th>Username</th><th>Dreams</th><th>Role</th><th>Created</th><th>Action</th></tr>${users.map(u => `<tr><td>${u.id}</td><td>${u.username}</td><td>${u.dreams}</td><td>${u.role}</td><td>${u.createdAt}</td><td><button data-id="${u.id}">Delete</button></td></tr>`).join('')}</table>`;
-      document.querySelectorAll('#usersList button').forEach(btn => {
-        btn.onclick = async () => {
-          await fetch(`/api/admin/user/${btn.dataset.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-          loadUsers();
-        };
-      });
-    }
-    async function loadMessages() {
-      const res = await fetch('/api/admin/messages', { headers: { 'Authorization': `Bearer ${token}` } });
-      const msgs = await res.json();
-      const container = document.getElementById('messagesList');
-      container.innerHTML = `<table><tr><th>ID</th><th>From</th><th>To</th><th>Text</th><th>Timestamp</th></tr>${msgs.map(m => `<tr><td>${m.id}</td><td>${m.fromUsername || '?'}</td><td>${m.toUsername || 'group'}</td><td>${m.text || '(image)'}</td><td>${m.timestamp}</td></tr>`).join('')}</table>`;
-    }
-  </script>
+      };
+    });
+  }
+
+  async function loadMessages() {
+    const msgs = await apiAdmin('GET', '/api/admin/messages');
+    const container = document.getElementById('messagesList');
+    container.innerHTML = `<table>
+      <tr><th>ID</th><th>От</th><th>Кому</th><th>Текст</th><th>Время</th></tr>
+      ${msgs.map(m => `
+        <tr>
+          <td>${m.id}</td>
+          <td>${m.fromUsername || '?'}</td>
+          <td>${m.toUsername || 'группа/канал'}</td>
+          <td>${m.text || '(изображение)'}</td>
+          <td>${m.timestamp}</td>
+        </tr>
+      `).join('')}
+    </table>`;
+  }
+</script>
 </body>
 </html>
