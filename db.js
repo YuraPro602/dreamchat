@@ -1,6 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
+
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 const dbPath = path.join(dataDir, 'dreamchat.sqlite');
@@ -24,8 +25,7 @@ db.serialize(() => {
   )`);
   // Друзья
   db.run(`CREATE TABLE IF NOT EXISTS friends (
-    userId INTEGER, friendId INTEGER, status TEXT DEFAULT 'accepted',
-    PRIMARY KEY (userId, friendId)
+    userId INTEGER, friendId INTEGER, PRIMARY KEY (userId, friendId)
   )`);
   // Запросы в друзья
   db.run(`CREATE TABLE IF NOT EXISTS friend_requests (
@@ -43,27 +43,23 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS group_members (
     groupId INTEGER, userId INTEGER, PRIMARY KEY (groupId, userId)
   )`);
-  // Сообщения (личные + групповые)
+  // Сообщения
   db.run(`CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    fromId INTEGER,
-    toId INTEGER,
-    groupId INTEGER,
-    text TEXT,
-    image TEXT,
+    fromId INTEGER, toId INTEGER, groupId INTEGER,
+    text TEXT, image TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
   // Посты
   db.run(`CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    userId INTEGER,
-    text TEXT NOT NULL,
-    image TEXT,
+    userId INTEGER, text TEXT NOT NULL, image TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
-  // Аксессуары
+  // Аксессуары (золотая рамка и т.д.)
   db.run(`CREATE TABLE IF NOT EXISTS user_accessories (
     userId INTEGER, accessory TEXT, PRIMARY KEY (userId, accessory)
   )`);
 });
+
 module.exports = db;
