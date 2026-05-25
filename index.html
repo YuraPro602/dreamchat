@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>DreamChat✨</title>
+  <style>
+    /* ========== СТИЛИ ========== */
+    *{margin:0;padding:0;box-sizing:border-box;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);}
+    body{display:flex;justify-content:center;align-items:center;height:100vh;font-family:'Segoe UI','Poppins',system-ui,sans-serif;background:radial-gradient(circle at 20% 30%, #0a0f2a, #030617);}
+    .animated-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;overflow:hidden;}
+    .particle{position:absolute;background:rgba(168,85,247,0.4);border-radius:50%;animation:float 15s infinite ease-in-out;pointer-events:none;}
+    @keyframes float{0%{transform:translateY(0) translateX(0) scale(1);opacity:0;}50%{opacity:0.6;}100%{transform:translateY(-100vh) translateX(20px) scale(0);opacity:0;}}
+    .gradient-orbit{position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(168,85,247,0.15) 0%,rgba(0,0,0,0) 70%);animation:spin 40s linear infinite;z-index:-1;}
+    @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+    .app-container{width:100%;max-width:1500px;height:90vh;background:rgba(15,25,45,0.75);backdrop-filter:blur(12px);border-radius:2rem;box-shadow:0 25px 50px rgba(0,0,0,0.5),0 0 0 1px rgba(168,85,247,0.3);overflow:hidden;display:flex;position:relative;}
+    .theme-ball{position:fixed;bottom:25px;right:25px;width:60px;height:60px;background:#a855f7;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1000;box-shadow:0 0 15px rgba(168,85,247,0.6);transition:transform 0.3s,background 0.3s;animation:pulse-glow 2s infinite;}
+    .theme-ball:hover{transform:scale(1.1);}
+    @keyframes pulse-glow{0%{box-shadow:0 0 5px #a855f7;}50%{box-shadow:0 0 25px #a855f7;}100%{box-shadow:0 0 5px #a855f7;}}
+    .theme-ball span{font-size:2rem;transition:transform 0.5s ease;}
+    .theme-ball:active span{transform:rotate(360deg);}
+    .sidebar-vertical{width:100px;background:rgba(0,0,0,0.5);border-right:1px solid #334155;display:flex;flex-direction:column;padding:20px 0;gap:10px;}
+    .vertical-tab{display:flex;flex-direction:column;align-items:center;padding:12px 8px;cursor:pointer;border-radius:60px;margin:0 8px;color:#cbd5e1;font-size:0.75rem;font-weight:500;transition:all 0.2s;}
+    .vertical-tab:hover{background:rgba(168,85,247,0.3);transform:translateX(5px);}
+    .vertical-tab.active{background:#a855f7;color:#0f172a;box-shadow:0 0 12px #a855f7;}
+    .vertical-tab-icon{font-size:1.5rem;margin-bottom:6px;}
+    .chats-sidebar{width:300px;background:rgba(0,0,0,0.4);border-right:1px solid #334155;display:flex;flex-direction:column;}
+    .profile-header{padding:15px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:white;display:flex;justify-content:space-between;align-items:center;}
+    .avatar{width:48px;height:48px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.2rem;background-size:cover;background-position:center;cursor:pointer;}
+    .search-input{width:100%;padding:10px 16px;border-radius:60px;border:none;background:#1e293b;color:white;margin:8px;width:calc(100% - 16px);}
+    .chats-list{flex:1;overflow-y:auto;}
+    .chat-item{padding:12px 16px;cursor:pointer;border-radius:60px;margin:4px 8px;background:#1e293b;transition:0.1s;}
+    .chat-item:hover{background:#334155;transform:translateX(4px);}
+    .chat-item.active{background:#a855f7;color:#0f172a;}
+    .chat-area{flex:1;display:flex;flex-direction:column;position:relative;}
+    .chat-header{padding:12px 20px;background:#0f172a;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center;}
+    .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+    .message{max-width:70%;padding:10px 16px;border-radius:60px;background:#1e293b;color:#e2e8f0;animation:fadeInUp 0.3s ease;}
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    .message-self{background:#a855f7;align-self:flex-end;color:#0f172a;}
+    .message-image{max-width:200px;border-radius:16px;margin-top:6px;cursor:pointer;}
+    .input-area{display:flex;gap:10px;padding:12px;background:#0f172a;border-top:1px solid #334155;}
+    .input-area input{flex:1;padding:12px 18px;border-radius:60px;border:none;background:#1e293b;color:white;}
+    .input-area button{background:#a855f7;border:none;border-radius:60px;padding:0 20px;font-weight:bold;cursor:pointer;transition:0.2s;}
+    .input-area button:hover{transform:scale(1.02);box-shadow:0 0 10px #a855f7;}
+    .floating-plus{position:absolute;bottom:80px;right:20px;width:56px;height:56px;background:#a855f7;border:none;border-radius:50%;font-size:1.8rem;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);transition:0.2s;}
+    .floating-plus:hover{transform:scale(1.05);background:#c084fc;}
+    .view-pane{flex:1;overflow-y:auto;padding:20px;color:#e2e8f0;}
+    .friend-item,.group-item,.post-item,.shop-item,.quest-item{background:#1e293b;margin:8px;padding:12px;border-radius:60px;cursor:pointer;transition:0.2s;}
+    .friend-item:hover,.group-item:hover{transform:translateX(5px);background:#334155;}
+    .clicker-btn{padding:15px 30px;font-size:1.5rem;border-radius:60px;background:#a855f7;border:none;margin:10px 0;transition:0.2s;}
+    .clicker-btn:hover{transform:scale(1.02);box-shadow:0 0 15px #a855f7;}
+    button,.btn,input{border-radius:60px !important;}
+    .hidden{display:none;}
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#a855f7;color:white;padding:10px 20px;border-radius:60px;z-index:1100;animation:fadeInUp 0.3s;}
+    .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:2000;}
+    .modal-content{background:#1e293b;padding:1.5rem;border-radius:2rem;width:90%;max-width:500px;color:white;}
+    .modal-content input,.modal-content textarea,.modal-content canvas{margin:8px 0;width:100%;border-radius:60px;padding:8px;}
+    .draw-canvas{border:2px solid #a855f7;border-radius:16px;background:white;cursor:crosshair;}
+    .call-container{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .call-video{width:100%;height:100%;object-fit:cover;}
+    .call-controls{position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:15px;padding:10px;background:rgba(0,0,0,0.6);border-radius:60px;margin:0 auto;width:fit-content;}
+    .call-controls button{background:#a855f7;border:none;border-radius:50%;width:50px;height:50px;font-size:1.5rem;cursor:pointer;}
+    .call-controls button.end-call{background:#ff3b30;}
+  </style>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+<div class="animated-bg" id="particles"></div>
+<div class="gradient-orbit"></div>
+<div class="theme-ball" id="themeBall"><span>🎨</span></div>
+
+<div id="authScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; position: fixed; width: 100%; background: radial-gradient(circle at 20% 30%, #0a0f2a, #030617); z-index: 2000;">
+  <div style="background:#1e293b; padding: 2rem; border-radius: 2rem; width: 300px;">
+    <h2 style="color:#c084fc;">DreamChat✨</h2>
+    <input id="loginUsername" placeholder="Логин"><br>
+    <input id="loginPassword" type="password" placeholder="Пароль"><br>
+    <button id="loginBtn">Войти</button>
+    <button id="showRegisterBtn">Регистрация</button>
+  </div>
+  <div id="registerForm" style="display:none; background:#1e293b; padding:2rem; border-radius:2rem; width:300px; margin-top:20px;">
+    <input id="regUsername" placeholder="Логин"><br>
+    <input id="regPassword" type="password" placeholder="Пароль"><br>
+    <button id="registerBtn">Зарегистрироваться</button>
+    <button id="hideRegisterBtn">Назад</button>
+  </div>
+</div>
+
+<div id="mainApp" style="display: none; width: 100%; height: 100%;">
+  <div class="app-container">
+    <div class="sidebar-vertical" id="verticalTabs">
+      <div class="vertical-tab active" data-view="chats"><div class="vertical-tab-icon">💬</div><span>Чаты</span></div>
+      <div class="vertical-tab" data-view="friends"><div class="vertical-tab-icon">👥</div><span>Друзья</span></div>
+      <div class="vertical-tab" data-view="groups"><div class="vertical-tab-icon">👪</div><span>Группы</span></div>
+      <div class="vertical-tab" data-view="feed"><div class="vertical-tab-icon">📰</div><span>Лента</span></div>
+      <div class="vertical-tab" data-view="quests"><div class="vertical-tab-icon">🎯</div><span>Квесты</span></div>
+      <div class="vertical-tab" data-view="games"><div class="vertical-tab-icon">🎮</div><span>Игры</span></div>
+      <div class="vertical-tab" data-view="clicker"><div class="vertical-tab-icon">🖱️</div><span>Кликер</span></div>
+      <div class="vertical-tab" data-view="shop"><div class="vertical-tab-icon">🛒</div><span>Магазин</span></div>
+      <div class="vertical-tab" data-view="settings"><div class="vertical-tab-icon">⚙️</div><span>Настройки</span></div>
+    </div>
+    <div class="main-content" style="flex:1; display:flex;">
+      <div id="chatsView" style="display: flex; width:100%;">
+        <div class="chats-sidebar">
+          <div class="profile-header">
+            <div class="avatar" id="userAvatar"></div>
+            <div><div id="userName"></div></div>
+            <button id="logoutBtn">Выйти</button>
+          </div>
+          <input id="chatSearch" class="search-input" placeholder="Поиск чатов...">
+          <div id="chatsList" class="chats-list"></div>
+        </div>
+        <div class="chat-area">
+          <div class="chat-header"><span id="chatWith">Выберите чат</span><button id="voiceCallBtn" class="hidden">🎤 Звонок</button><button id="videoCallBtn" class="hidden">📹 Видео</button></div>
+          <div id="messagesContainer" class="messages"><div>Выберите чат</div></div>
+          <div class="input-area">
+            <input id="messageInput" placeholder="Сообщение..." disabled>
+            <button id="sendBtn" disabled>✈️</button>
+            <button id="attachBtn">📎</button>
+            <button id="emojiBtn">😊</button>
+            <button id="voiceMsgBtn">🎙️</button>
+          </div>
+          <button id="floatingPlusBtn" class="floating-plus">+</button>
+        </div>
+      </div>
+      <div id="friendsView" class="view-pane hidden"><h2>Друзья</h2><div id="friendRequestsList"></div><div id="friendsList"></div><input id="searchUsers" class="search-input" placeholder="Поиск"><div id="searchResults"></div></div>
+      <div id="groupsView" class="view-pane hidden"><h2>Группы</h2><button id="createGroupBtn">+ Создать группу</button><div id="groupsList"></div></div>
+      <div id="feedView" class="view-pane hidden"><h2>Лента</h2><textarea id="postText" placeholder="Поделитесь мыслями..."></textarea><button id="publishPostBtn">Опубликовать</button><div id="postsList"></div></div>
+      <div id="questsView" class="view-pane hidden"><h2>Квесты</h2><div id="questsList"></div></div>
+      <div id="gamesView" class="view-pane hidden"><h2>Игры</h2><button id="amongusBtn">Among Us</button> <button id="scratchBtn">Scratch</button><div id="gameContainer"></div></div>
+      <div id="clickerView" class="view-pane hidden"><h2>DreamClicker</h2><p>Очки: <span id="clickerScore">0</span></p><button id="clickBtn" class="clicker-btn">КЛИК!</button><div><button id="upgradeClickBtn">Улучшить клик (10 очков)</button></div><div><button id="upgradeAutoBtn">Автокликер (50 очков)</button></div></div>
+      <div id="shopView" class="view-pane hidden"><h2>Магазин</h2><p>Dreams: <span id="dreamsBalance">0</span></p><button id="buyDreamsBtn">Купить 100 Dreams</button><div id="shopItems"></div></div>
+      <div id="settingsView" class="view-pane hidden"><button id="editProfileBtn">Редактировать профиль</button><button id="settingsLogoutBtn">Выйти</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SERVER = 'https://dreamchat-backend.onrender.com';
+  let socket = null, token = null, currentUser = null, currentChat = null;
+  let autoInterval = null;
+  let userScores = { clickerScore: 0, clickValue: 1, autoValue: 0 };
+  let localStream, remoteStream, peerConnection;
+
+  // ========== ОБЩИЕ ФУНКЦИИ ==========
+  function showToast(msg) {
+    let t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
+    document.body.appendChild(t); setTimeout(()=>t.remove(), 2500);
+  }
+  async function api(method, url, body) {
+    const res = await fetch(SERVER + url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    return res.json();
+  }
+
+  // ========== ТЕМА ==========
+  const themes = {
+    purple: { bg: 'radial-gradient(circle at 20% 30%, #0a0f2a, #030617)', primary: '#a855f7' },
+    blue: { bg: 'radial-gradient(circle at 20% 30%, #001f3f, #000000)', primary: '#2196F3' },
+    green: { bg: 'radial-gradient(circle at 20% 30%, #004d1a, #001a00)', primary: '#4CAF50' },
+    orange: { bg: 'radial-gradient(circle at 20% 30%, #4a1c00, #1a0a00)', primary: '#FF9800' },
+    red: { bg: 'radial-gradient(circle at 20% 30%, #4a0000, #1a0000)', primary: '#F44336' }
+  };
+  let currentTheme = localStorage.getItem('dreamchat_theme') || 'purple';
+  function setTheme(name) {
+    currentTheme = name;
+    document.body.style.background = themes[name].bg;
+    const primary = themes[name].primary;
+    document.querySelectorAll('.vertical-tab.active, .chat-item.active, .message-self, .clicker-btn, .floating-plus, .theme-ball').forEach(el => {
+      if(el.style) el.style.backgroundColor = primary;
+    });
+    localStorage.setItem('dreamchat_theme', name);
+  }
+  document.getElementById('themeBall').onclick = () => {
+    const names = Object.keys(themes);
+    let next = (names.indexOf(currentTheme) + 1) % names.length;
+    setTheme(names[next]);
+    const span = document.querySelector('#themeBall span');
+    span.style.transform = 'rotate(360deg)';
+    setTimeout(() => span.style.transform = '', 500);
+  };
+  setTheme(currentTheme);
+
+  // ========== РЕГИСТРАЦИЯ / ЛОГИН ==========
+  document.getElementById('showRegisterBtn').onclick = () => {
+    document.querySelector('#authScreen > div').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+  };
+  document.getElementById('hideRegisterBtn').onclick = () => {
+    document.getElementById('registerForm').style.display = 'none';
+    document.querySelector('#authScreen > div').style.display = 'block';
+  };
+  document.getElementById('registerBtn').onclick = async () => {
+    const username = document.getElementById('regUsername').value;
+    const password = document.getElementById('regPassword').value;
+    const res = await api('POST', '/api/register', { username, password });
+    if (res.token) {
+      showToast('Регистрация успешна! Теперь войдите.');
+      document.getElementById('registerForm').style.display = 'none';
+      document.querySelector('#authScreen > div').style.display = 'block';
+    } else showToast(res.error);
+  };
+  document.getElementById('loginBtn').onclick = async () => {
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    const res = await api('POST', '/api/login', { username, password });
+    if (res.token) {
+      token = res.token;
+      currentUser = { userId: res.userId, username: res.username };
+      localStorage.setItem('dreamchat_token', token);
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('userName').innerText = username;
+      loadUserAvatar();
+      initSocket();
+      loadChats();
+      loadUserData();
+      startAutoClicker();
+      loadFriendRequests();
+      loadFriends();
+    } else showToast(res.error);
+  };
+  document.getElementById('logoutBtn').onclick = () => { localStorage.removeItem('dreamchat_token'); location.reload(); };
+  document.getElementById('settingsLogoutBtn').onclick = () => { localStorage.removeItem('dreamchat_token'); location.reload(); };
+
+  // ========== АВАТАР И РИСОВАНИЕ ==========
+  async function loadUserAvatar() {
+    const user = await api('GET', '/api/user');
+    const avatarDiv = document.getElementById('userAvatar');
+    if(user && user.avatar) {
+      avatarDiv.style.backgroundImage = `url(${user.avatar})`;
+      avatarDiv.innerText = '';
+    } else {
+      avatarDiv.style.backgroundImage = '';
+      avatarDiv.innerText = currentUser.username[0];
+    }
+  }
+  document.getElementById('editProfileBtn').onclick = () => {
+    const modal = document.createElement('div'); modal.className = 'modal';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <h3>Редактирование профиля</h3>
+        <label>Аватар:</label><input type="file" id="avatarUpload" accept="image/*">
+        <label>Рисование:</label><canvas id="drawCanvas" width="300" height="200" class="draw-canvas"></canvas>
+        <button id="saveDrawingBtn">Сохранить рисунок</button>
+        <button id="closeProfileModal">Закрыть</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    const canvas = modal.querySelector('#drawCanvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    canvas.addEventListener('mousedown', () => drawing = true);
+    canvas.addEventListener('mousemove', (e) => { if(drawing) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
+    canvas.addEventListener('mouseup', () => drawing = false);
+    modal.querySelector('#avatarUpload').onchange = async (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        await api('POST', '/api/user/avatar', { avatar: ev.target.result });
+        loadUserAvatar();
+        showToast('Аватар обновлён');
+      };
+      reader.readAsDataURL(file);
+    };
+    modal.querySelector('#saveDrawingBtn').onclick = async () => {
+      const drawingData = canvas.toDataURL();
+      await api('POST', '/api/user/drawing', { drawing: drawingData });
+      showToast('Рисунок сохранён');
+    };
+    modal.querySelector('#closeProfileModal').onclick = () => modal.remove();
+  };
+
+  // ========== ЗАПРОСЫ В ДРУЗЬЯ ==========
+  async function loadFriendRequests() {
+    const requests = await api('GET', '/api/friend-requests');
+    const container = document.getElementById('friendRequestsList');
+    if(!container) return;
+    container.innerHTML = '<h3>Запросы в друзья</h3>';
+    requests.forEach(r => {
+      const div = document.createElement('div'); div.className = 'friend-item';
+      div.innerHTML = `${r.username} хочет добавить вас в друзья <button onclick="acceptFriend(${r.id})">✅</button> <button onclick="declineFriend(${r.id})">❌</button>`;
+      container.appendChild(div);
+    });
+  }
+  window.acceptFriend = async (id) => {
+    await api('POST', '/api/friends/accept', { requestId: id });
+    loadFriendRequests();
+    loadFriends();
+    loadChats();
+  };
+  window.declineFriend = async (id) => {
+    await api('POST', '/api/friends/decline', { requestId: id });
+    loadFriendRequests();
+  };
+  async function sendFriendRequest(username) {
+    const users = await api('GET', `/api/users/search?q=${encodeURIComponent(username)}`);
+    const found = users.find(u => u.username === username);
+    if(!found) showToast('Пользователь не найден');
+    else {
+      await api('POST', '/api/friends/request', { toUserId: found.id });
+      showToast('Запрос отправлен');
+    }
+  }
+
+  // ========== ЧАТ ==========
+  function initSocket() {
+    socket = io(SERVER);
+    socket.emit('auth', token);
+    socket.on('new_message', (msg) => {
+      if (currentChat && (currentChat.id === msg.fromId || currentChat.id === msg.toId)) {
+        addMessage(msg);
+      }
+      showToast(`Новое сообщение от ${msg.fromId}`);
+    });
+    socket.on('friend_request', (data) => {
+      showToast(`${data.fromUsername} хочет добавить вас в друзья`);
+      loadFriendRequests();
+    });
+    socket.on('call_offer', async (data) => {
+      if(confirm(`Входящий звонок от ${data.fromUsername}. Принять?`)) startCall(data.isVideo, data.offer);
+    });
+  }
+  async function loadChats() {
+    const friends = await api('GET', '/api/friends');
+    const groups = await api('GET', '/api/groups');
+    const container = document.getElementById('chatsList');
+    container.innerHTML = '';
+    friends.forEach(f => {
+      const div = document.createElement('div'); div.className = 'chat-item';
+      div.innerText = f.username;
+      div.onclick = () => openChat({ id: f.id, name: f.username, type: 'private' });
+      container.appendChild(div);
+    });
+    groups.forEach(g => {
+      const div = document.createElement('div'); div.className = 'chat-item';
+      div.innerText = `👥 ${g.name}`;
+      div.onclick = () => openChat({ id: g.id, name: g.name, type: 'group' });
+      container.appendChild(div);
+    });
+  }
+  function openChat(chat) {
+    currentChat = chat;
+    document.getElementById('chatWith').innerText = chat.name;
+    document.getElementById('messageInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('voiceCallBtn').classList.remove('hidden');
+    document.getElementById('videoCallBtn').classList.remove('hidden');
+    document.getElementById('messagesContainer').innerHTML = '';
+    loadMessagesHistory();
+  }
+  async function loadMessagesHistory() {
+    if(!currentChat) return;
+    const history = await api('GET', `/api/messages?chatId=${currentChat.id}&type=${currentChat.type}`);
+    history.forEach(msg => addMessage(msg, false));
+  }
+  function sendMessage(text, imageData=null) {
+    if (!text && !imageData) return;
+    const data = { text: text || '', image: imageData };
+    if(currentChat.type === 'private') data.toId = currentChat.id;
+    else data.groupId = currentChat.id;
+    socket.emit('send_message', data);
+    addMessage({ fromId: currentUser.userId, text, image: imageData, timestamp: Date.now(), isSelf: true });
+  }
+  function addMessage(msg, animate=true) {
+    const container = document.getElementById('messagesContainer');
+    const div = document.createElement('div'); div.className = 'message';
+    if (msg.fromId === currentUser.userId) div.classList.add('message-self');
+    let content = `<div><strong>${msg.fromId}</strong> ${msg.text || ''}</div>`;
+    if(msg.image) content += `<img src="${msg.image}" class="message-image">`;
+    div.innerHTML = content;
+    if(animate) div.style.animation = 'fadeInUp 0.3s';
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+  document.getElementById('sendBtn').onclick = () => {
+    const text = document.getElementById('messageInput').value;
+    if(text) sendMessage(text);
+    document.getElementById('messageInput').value = '';
+  };
+  document.getElementById('messageInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('sendBtn').click(); });
+  document.getElementById('attachBtn').onclick = () => {
+    const input = document.createElement('input'); input.type='file'; input.accept='image/*';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = ev => sendMessage('', ev.target.result);
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+  // Голосовое сообщение
+  let mediaRecorder, audioChunks = [];
+  document.getElementById('voiceMsgBtn').onclick = async () => {
+    if(mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      document.getElementById('voiceMsgBtn').innerHTML = '🎙️';
+      return;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+      const url = URL.createObjectURL(blob);
+      sendMessage('🎤 Голосовое сообщение', url);
+    };
+    mediaRecorder.start();
+    document.getElementById('voiceMsgBtn').innerHTML = '⏹️';
+    setTimeout(() => { if(mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 15000);
+  };
+  // Эмодзи-пикер (большие смайлы)
+  document.getElementById('emojiBtn').onclick = () => {
+    const emojis = ['😀','😂','😍','😎','🥳','😢','❤️','👍','🔥','✨','🥰','😘','😁','🤣','😊','🙃','😉','😌','😭','💔','🎉','⭐','🌙','⚡','🌈','🍕','🍔','🎵','🎶','💎','👑','🚀','🐱','🐶','🐼'];
+    let picker = document.createElement('div'); picker.style.position='fixed'; picker.style.bottom='80px'; picker.style.right='20px'; picker.style.background='#1e293b'; picker.style.borderRadius='60px'; picker.style.padding='15px'; picker.style.display='grid'; picker.style.gridTemplateColumns='repeat(6,1fr)'; picker.style.gap='10px'; picker.style.width='300px'; picker.style.zIndex='1000'; picker.style.boxShadow='0 0 20px black';
+    emojis.forEach(e => {
+      let btn = document.createElement('button'); btn.textContent = e; btn.style.fontSize='2rem'; btn.style.background='none'; btn.style.border='none'; btn.style.cursor='pointer';
+      btn.onclick = () => { document.getElementById('messageInput').value += e; picker.remove(); };
+      picker.appendChild(btn);
+    });
+    document.body.appendChild(picker);
+    setTimeout(()=>picker.remove(), 10000);
+  };
+  // Звонки WebRTC
+  async function startCall(isVideo, offer=null) {
+    if(!currentChat || currentChat.type !== 'private') { showToast('Звонок доступен только в приватном чате'); return; }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo });
+    localStream = stream;
+    peerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+    peerConnection.ontrack = (event) => { remoteStream = event.streams[0]; showCallUI(remoteStream, isVideo); };
+    peerConnection.onicecandidate = (event) => {
+      if(event.candidate) socket.emit('call_signal', { to: currentChat.id, signal: event.candidate });
+    };
+    if(offer) {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      socket.emit('call_answer', { to: currentChat.id, answer });
+    } else {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      socket.emit('call_offer', { to: currentChat.id, offer, isVideo });
+    }
+    showCallUI(localStream, isVideo, true);
+  }
+  function showCallUI(stream, isVideo, isCaller=false) {
+    const container = document.createElement('div'); container.className = 'call-container';
+    const video = document.createElement('video'); video.autoplay = true; video.playsInline = true;
+    if(stream) video.srcObject = stream;
+    if(!isVideo) video.style.display = 'none';
+    const controls = document.createElement('div'); controls.className = 'call-controls';
+    controls.innerHTML = `<button id="toggleMic">🎤</button><button id="toggleCam">📹</button><button id="endCallBtn" class="end-call">📞</button>`;
+    container.appendChild(video); container.appendChild(controls);
+    document.body.appendChild(container);
+    document.getElementById('toggleMic').onclick = () => {
+      const enabled = localStream.getAudioTracks()[0].enabled;
+      localStream.getAudioTracks()[0].enabled = !enabled;
+      document.getElementById('toggleMic').innerHTML = !enabled ? '🔇' : '🎤';
+    };
+    document.getElementById('toggleCam').onclick = () => {
+      if(!isVideo) return;
+      const enabled = localStream.getVideoTracks()[0].enabled;
+      localStream.getVideoTracks()[0].enabled = !enabled;
+      document.getElementById('toggleCam').innerHTML = !enabled ? '📷❌' : '📹';
+    };
+    document.getElementById('endCallBtn').onclick = () => {
+      if(peerConnection) peerConnection.close();
+      if(localStream) localStream.getTracks().forEach(t => t.stop());
+      container.remove();
+    };
+  }
+  document.getElementById('voiceCallBtn').onclick = () => startCall(false);
+  document.getElementById('videoCallBtn').onclick = () => startCall(true);
+  socket.on('call_signal', (data) => { if(peerConnection) peerConnection.addIceCandidate(new RTCIceCandidate(data.signal)); });
+  socket.on('call_answer', async (data) => { if(peerConnection) await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); });
+
+  // ========== ГРУППЫ И КАНАЛЫ ==========
+  async function loadGroups() {
+    const groups = await api('GET', '/api/groups');
+    const container = document.getElementById('groupsList');
+    container.innerHTML = '';
+    groups.forEach(g => {
+      const div = document.createElement('div'); div.className = 'group-item';
+      div.innerHTML = `${g.name} <button onclick="openChat({id:${g.id}, name:'${g.name}', type:'group'})">Открыть</button>`;
+      container.appendChild(div);
+    });
+  }
+  document.getElementById('createGroupBtn').onclick = async () => {
+    const name = prompt('Название группы');
+    if(!name) return;
+    const friends = await api('GET', '/api/friends');
+    const members = friends.map(f => f.id);
+    await api('POST', '/api/groups', { name, members });
+    showToast('Группа создана');
+    loadGroups();
+    loadChats();
+  };
+  // ========== ДРУЗЬЯ (список и поиск) ==========
+  async function loadFriends() {
+    const friends = await api('GET', '/api/friends');
+    const container = document.getElementById('friendsList');
+    container.innerHTML = '<h3>Мои друзья</h3>';
+    friends.forEach(f => {
+      const div = document.createElement('div'); div.className = 'friend-item';
+      div.innerHTML = `${f.username} <button onclick="openChat({id:${f.id}, name:'${f.username}', type:'private'})">💬</button>`;
+      container.appendChild(div);
+    });
+  }
+  document.getElementById('searchUsers').addEventListener('input', async (e) => {
+    const q = e.target.value;
+    if(!q) return;
+    const users = await api('GET', `/api/users/search?q=${encodeURIComponent(q)}`);
+    const container = document.getElementById('searchResults');
+    container.innerHTML = '';
+    users.forEach(u => {
+      const div = document.createElement('div'); div.className = 'friend-item';
+      div.innerHTML = `${u.username} <button onclick="sendFriendRequest('${u.username}')">➕ Добавить</button>`;
+      container.appendChild(div);
+    });
+  });
+  // ========== ОСТАЛЬНОЕ (кликер, магазин, лента, квесты, игры) ==========
+  async function loadUserData() {
+    const user = await api('GET', '/api/user');
+    if(user) {
+      userScores = { clickerScore: user.clickerScore || 0, clickValue: user.clickValue || 1, autoValue: user.autoValue || 0 };
+      updateClickerUI();
+    }
+  }
+  async function handleClick() {
+    const res = await api('POST', '/api/clicker/click');
+    if(res.newScore !== undefined) { userScores.clickerScore = res.newScore; updateClickerUI(); }
+  }
+  async function upgrade(type) {
+    const res = await api('POST', '/api/clicker/upgrade', { type });
+    if(res.success) {
+      userScores.clickerScore = res.clickerScore;
+      if(type === 'click') userScores.clickValue = res.clickValue;
+      else userScores.autoValue = res.autoValue;
+      updateClickerUI();
+      showToast(`Улучшение ${type === 'click' ? 'клика' : 'автокликера'} куплено`);
+    } else showToast('Не хватает очков');
+  }
+  function updateClickerUI() { document.getElementById('clickerScore').innerText = Math.floor(userScores.clickerScore); }
+  function startAutoClicker() {
+    if(autoInterval) clearInterval(autoInterval);
+    autoInterval = setInterval(async () => {
+      if(userScores.autoValue > 0) {
+        const res = await api('POST', '/api/clicker/click');
+        if(res.newScore !== undefined) { userScores.clickerScore = res.newScore; updateClickerUI(); }
+      }
+    }, 1000);
+  }
+  document.getElementById('clickBtn').onclick = handleClick;
+  document.getElementById('upgradeClickBtn').onclick = () => upgrade('click');
+  document.getElementById('upgradeAutoBtn').onclick = () => upgrade('auto');
+  async function loadShop() {
+    const user = await api('GET', '/api/user');
+    document.getElementById('dreamsBalance').innerText = user.dreams;
+    document.getElementById('shopItems').innerHTML = `<div class="shop-item"><strong>Золотая рамка</strong> - 100 Dreams <button onclick="buyAccessory('gold')">Купить</button></div>`;
+  }
+  window.buyAccessory = async (acc) => {
+    const res = await api('POST', '/api/shop/buy_accessory', { accessory: acc });
+    if(res.success) { showToast('Рамка куплена'); loadShop(); }
+    else showToast('Не хватает Dreams');
+  };
+  document.getElementById('buyDreamsBtn').onclick = async () => {
+    const res = await api('POST', '/api/shop/buy_dreams', { amount: 100 });
+    if(res.dreams !== undefined) { showToast('+100 Dreams'); loadShop(); }
+  };
+  async function loadPosts() {
+    const posts = await api('GET', '/api/posts');
+    const container = document.getElementById('postsList');
+    container.innerHTML = '';
+    posts.forEach(p => {
+      const div = document.createElement('div'); div.className = 'post-item';
+      div.innerHTML = `<strong>${p.username}</strong><br>${p.text}<br><small>${new Date(p.timestamp).toLocaleString()}</small>`;
+      container.appendChild(div);
+    });
+  }
+  document.getElementById('publishPostBtn').onclick = async () => {
+    const text = document.getElementById('postText').value;
+    if(!text) return;
+    await api('POST', '/api/posts', { text });
+    document.getElementById('postText').value = '';
+    loadPosts();
+  };
+  function loadQuests() { document.getElementById('questsList').innerHTML = '<div class="quest-item">✅ Войти в мессенджер - 10 Dreams</div><div class="quest-item">📨 Отправить 5 сообщений - 20 Dreams</div>'; }
+  document.getElementById('amongusBtn').onclick = () => { document.getElementById('gameContainer').innerHTML = '<div style="background:#1e293b; padding:20px; border-radius:60px;">Among Us прототип (скоро)</div>'; };
+  document.getElementById('scratchBtn').onclick = () => { document.getElementById('gameContainer').innerHTML = '<iframe src="https://scratch.mit.edu/projects/345050195/embed" width="100%" height="400"></iframe>'; };
+  function switchView(view) {
+    document.querySelectorAll('.main-content > div').forEach(div => div.classList.add('hidden'));
+    document.getElementById(view+'View').classList.remove('hidden');
+    if(view === 'chats') document.getElementById('chatsView').style.display = 'flex';
+    else document.getElementById('chatsView').style.display = 'none';
+    if(view === 'friends') { loadFriendRequests(); loadFriends(); }
+    if(view === 'groups') loadGroups();
+    if(view === 'feed') loadPosts();
+    if(view === 'quests') loadQuests();
+    if(view === 'shop') loadShop();
+    document.querySelectorAll('.vertical-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.vertical-tab[data-view="${view}"]`).classList.add('active');
+  }
+  document.querySelectorAll('.vertical-tab').forEach(tab => {
+    tab.onclick = () => switchView(tab.dataset.view);
+  });
+  document.getElementById('chatSearch').addEventListener('input', (e) => {
+    const val = e.target.value.toLowerCase();
+    document.querySelectorAll('.chat-item').forEach(item => {
+      if(item.innerText.toLowerCase().includes(val)) item.style.display = 'flex';
+      else item.style.display = 'none';
+    });
+  });
+  (async () => {
+    const savedToken = localStorage.getItem('dreamchat_token');
+    if(savedToken) {
+      token = savedToken;
+      const user = await api('GET', '/api/user');
+      if(user && user.username) {
+        currentUser = { userId: user.id, username: user.username };
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('userName').innerText = user.username;
+        loadUserAvatar();
+        initSocket();
+        loadChats();
+        loadUserData();
+        startAutoClicker();
+        loadFriendRequests();
+        loadFriends();
+      } else localStorage.removeItem('dreamchat_token');
+    }
+  })();
+  // Частицы фона
+  for(let i=0;i<50;i++) {
+    let p = document.createElement('div'); p.className = 'particle';
+    p.style.width = Math.random() * 6 + 2 + 'px';
+    p.style.height = p.style.width;
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDelay = Math.random() * 15 + 's';
+    p.style.animationDuration = 8 + Math.random() * 10 + 's';
+    document.getElementById('particles').appendChild(p);
+  }
+</script>
+</body>
+</html>
