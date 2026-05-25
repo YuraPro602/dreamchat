@@ -5,19 +5,20 @@
   <title>DreamChat Admin Panel</title>
   <style>
     body { background: #0f172a; color: #e2e8f0; font-family: monospace; padding: 20px; }
-    h1 { color: #a855f7; }
+    h1, h2 { color: #a855f7; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #334155; padding: 8px; text-align: left; }
     th { background: #1e293b; }
-    .delete-btn { background: #ff3b30; color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 8px; }
+    button { background: #ff3b30; color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+    button:hover { background: #cc0000; }
   </style>
 </head>
 <body>
-  <h1>Admin Panel</h1>
+  <h1>DreamChat Admin Panel</h1>
   <div id="auth">
     <h2>Admin Login</h2>
-    <input type="text" id="adminUsername" placeholder="Username"><br>
-    <input type="password" id="adminPassword" placeholder="Password"><br>
+    <input type="text" id="adminUsername" placeholder="Username"><br><br>
+    <input type="password" id="adminPassword" placeholder="Password"><br><br>
     <button id="adminLoginBtn">Login</button>
   </div>
   <div id="adminContent" style="display: none;">
@@ -37,21 +38,20 @@
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
-      if (data.token) {
+      if (data.token && data.role === 'admin') {
         token = data.token;
         document.getElementById('auth').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
         loadUsers();
         loadMessages();
-      } else alert('Login failed');
+      } else alert('Login failed or not admin');
     };
     async function loadUsers() {
       const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
       const users = await res.json();
       const container = document.getElementById('usersList');
-      container.innerHTML = '<table><tr><th>ID</th><th>Username</th><th>Dreams</th><th>Role</th><th>Created</th><th>Action</th></tr>' +
-        users.map(u => `<tr><td>${u.id}</td><td>${u.username}</td><td>${u.dreams}</td><td>${u.role}</td><td>${u.createdAt}</td><td><button class="delete-btn" data-id="${u.id}">Delete</button></td></tr>`).join('') + '</table>';
-      document.querySelectorAll('.delete-btn').forEach(btn => {
+      container.innerHTML = `<table><tr><th>ID</th><th>Username</th><th>Dreams</th><th>Role</th><th>Created</th><th>Action</th></tr>${users.map(u => `<tr><td>${u.id}</td><td>${u.username}</td><td>${u.dreams}</td><td>${u.role}</td><td>${u.createdAt}</td><td><button data-id="${u.id}">Delete</button></td></tr>`).join('')}</table>`;
+      document.querySelectorAll('#usersList button').forEach(btn => {
         btn.onclick = async () => {
           await fetch(`/api/admin/user/${btn.dataset.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
           loadUsers();
@@ -60,10 +60,9 @@
     }
     async function loadMessages() {
       const res = await fetch('/api/admin/messages', { headers: { 'Authorization': `Bearer ${token}` } });
-      const messages = await res.json();
+      const msgs = await res.json();
       const container = document.getElementById('messagesList');
-      container.innerHTML = '<table><tr><th>ID</th><th>From</th><th>To</th><th>Text</th><th>Timestamp</th></tr>' +
-        messages.map(m => `<tr><td>${m.id}</td><td>${m.fromUsername || '?'}</td><td>${m.toUsername || 'group'}</td><td>${m.text || '(image)'}</td><td>${m.timestamp}</td></tr>`).join('') + '</table>';
+      container.innerHTML = `<table><tr><th>ID</th><th>From</th><th>To</th><th>Text</th><th>Timestamp</th></tr>${msgs.map(m => `<tr><td>${m.id}</td><td>${m.fromUsername || '?'}</td><td>${m.toUsername || 'group'}</td><td>${m.text || '(image)'}</td><td>${m.timestamp}</td></tr>`).join('')}</table>`;
     }
   </script>
 </body>
